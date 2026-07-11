@@ -67,6 +67,18 @@ class DailySummarizer:
     def __init__(self):
         pass
 
+    # Category display names
+    _CATEGORY_NAMES = {
+        "ai-career": {"zh": "AI \u5c97\u4f4d\u4e0e\u6280\u80fd", "en": "AI Jobs & Skills"},
+        "ai-news": {"zh": "AI \u70ed\u70b9\u8d44\u8baf", "en": "AI Hot News"},
+        "ai-industry": {"zh": "AI \u884c\u4e1a\u52a8\u6001", "en": "AI Industry"},
+        "ai-tools": {"zh": "AI \u5de5\u5177\u4e0e\u5f00\u6e90", "en": "AI Tools & OSS"},
+        "github-trending": {"zh": "GitHub \u70ed\u95e8\u9879\u76ee", "en": "GitHub Trending"},
+        "ai-education": {"zh": "AI \u5b66\u4e60\u4e0e\u6559\u80b2", "en": "AI Education"},
+        "semiconductors": {"zh": "\u534a\u5bfc\u4f53\u4e0e\u786c\u4ef6", "en": "Semiconductors"},
+    }
+    _CATEGORY_ORDER = ["ai-career", "ai-news", "ai-industry", "ai-tools", "github-trending", "ai-education", "semiconductors"]
+
     async def generate_summary(
         self,
         items: List[ContentItem],
@@ -74,9 +86,10 @@ class DailySummarizer:
         total_fetched: int,
         language: str = "en",
     ) -> str:
-        """Generate daily summary in Markdown format.
+        """Generate daily summary in Markdown format, grouped by category.
 
-        Items are rendered in score-descending order (already sorted by orchestrator).
+        Items are rendered grouped by category, with sections for career analysis,
+        hot news, tools, and education.
 
         Args:
             items: High-scoring content items (already enriched)
@@ -98,7 +111,7 @@ class DailySummarizer:
             "---\n\n"
         )
 
-        # TOC
+        # TOC (keeps original ordering by score)
         toc_entries = []
         for i, item in enumerate(items):
             _t = item.metadata.get(f"title_{language}") or item.title
@@ -109,7 +122,30 @@ class DailySummarizer:
             toc_entries.append(f"{i + 1}. [{t}](#item-{i + 1}) \u2b50\ufe0f {score}/10")
         toc = "\n".join(toc_entries) + "\n\n---\n\n"
 
-        parts = [self._format_item(item, labels, language, i + 1) for i, item in enumerate(items)]
+        # Group items by category for sectioned output
+        groups: dict = {}
+        for item in items:
+            cat = item.metadata.get("category") or "other"
+            groups.setdefault(cat, []).append(item)
+
+        parts = []
+        idx = 1
+        # Output in predefined order
+        for cat in self._CATEGORY_ORDER:
+            if cat not in groups:
+                continue
+            cat_items = groups.pop(cat)
+            name = self._CATEGORY_NAMES.get(cat, {}).get(language, cat)
+            parts.append(f"## {name}\n\n")
+            for item in cat_items:
+                parts.append(self._format_item(item, labels, language, idx))
+                idx += 1
+        # Remaining categories
+        for cat, cat_items in groups.items():
+            parts.append(f"## {cat}\n\n")
+            for item in cat_items:
+                parts.append(self._format_item(item, labels, language, idx))
+                idx += 1
 
         return header + toc + "".join(parts)
 
