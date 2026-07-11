@@ -2,19 +2,17 @@
   "version": "1.0",
   "ai": {
     "provider": "deepseek",
-    "model": "deepseek-v4-flash",
+    "model": "deepseek-chat",
     "base_url": "https://api.deepseek.com",
     "api_key_env": "DEEPSEEK_API_KEY",
     "temperature": 0.3,
     "max_tokens": 8192,
     "throttle_sec": 1,
-    "languages": [
-      "zh",
-      "en"
-    ],
+    "languages": ["zh", "en"],
     "analysis_concurrency": 5,
     "enrichment_concurrency": 5
   },
+  "email": null,
   "sources": {
     "github": [
       {
@@ -36,15 +34,21 @@
       },
       {
         "type": "repo_releases",
-        "owner": "triton-lang",
-        "repo": "triton",
+        "owner": "langchain-ai",
+        "repo": "langchain",
+        "enabled": true
+      },
+      {
+        "type": "repo_releases",
+        "owner": "huggingface",
+        "repo": "transformers",
         "enabled": true
       }
     ],
     "hackernews": {
       "enabled": true,
       "fetch_top_stories": 30,
-      "min_score": 150
+      "min_score": 100
     },
     "rss": [
       {
@@ -60,16 +64,10 @@
         "category": "github-trending"
       },
       {
-        "name": "Semianalysis",
-        "url": "https://newsletter.semianalysis.com/feed",
+        "name": "The Batch (DeepLearning.AI)",
+        "url": "https://raw.githubusercontent.com/alan-turing-institute/ai-rss-feeds/refs/heads/main/feeds/the-batch.xml",
         "enabled": true,
-        "category": "semiconductors"
-      },
-      {
-        "name": "LWN.net",
-        "url": "https://lwn.net/headlines/full_text?key=${LWN_KEY}",
-        "enabled": true,
-        "category": "linux-kernel"
+        "category": "ai-education"
       }
     ],
     "reddit": {
@@ -95,20 +93,28 @@
       "users": [],
       "fetch_comments": 10
     },
-    "telegram": {
+    "google_news": {
       "enabled": true,
-      "channels": [
-        {
-          "channel": "zaihuapd",
-          "enabled": true,
-          "fetch_limit": 20
-        }
-      ]
+      "query": "AI 人工智能 岗位 招聘 技能 要求 OR \"AI job\" hiring requirements skills",
+      "language": "zh",
+      "country": "CN",
+      "max_results": 100,
+      "category": "ai-career"
     }
   },
   "filtering": {
-    "ai_score_threshold": 8.0,
-    "time_window_hours": 24
+    "ai_score_threshold": 7.0,
+    "time_window_hours": 24,
+    "max_items": 30,
+    "category_groups": {
+      "ai-career": {
+        "name": "AI 岗位与技能",
+        "limit": 10,
+        "categories": ["ai-career"]
+      }
+    },
+    "default_group": "other",
+    "default_group_limit": 8
   },
   "webhook": {
     "enabled": true,
@@ -118,9 +124,7 @@
     "platform": "feishu",
     "layout": "collapsible",
     "fallback_layout": "markdown",
-    "languages": [
-      "zh"
-    ],
+    "languages": ["zh"],
     "request_body": {
       "msg_type": "interactive",
       "card": {
